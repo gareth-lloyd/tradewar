@@ -13,10 +13,6 @@ describe("Good", function() {
   it("should have a name", function() {
     expect(good.get('name')).toEqual('tea');
   });
-
-  it("should have a base price", function() {
-    expect(good.get('basePrice')).toEqual(4.0);
-  });
 });
 
 describe("Tariff", function() {
@@ -40,32 +36,118 @@ describe("Country", function() {
   var tariff;
 
   beforeEach(function() {
-    country = new Country();
     good = new Good({
       name: 'tea',
-      basePrice: 4.0,
+    });
+    tariff = new Tariff({rate: 0.0});
+
+    country = new Country({
+        'tariffs': {'tea': tariff},
+        'sensitivities': {'tea': 1.0},
+        'basePrices': {'tea': 1},
+        'demands': {'tea': 1}
     });
   });
 
-  it("has domestic price of base price without tariff", function() {
-    expect(country.tariffForGood(good).get('rate')).toBe(0.0)
-    expect(country.domesticPrice(good)).toBe(good.get('basePrice'));
+  it("reports tariff for a good", function() {
+    expect(country.tariffFor(good)).toBe(tariff);
   });
 
-  it("can report tariff for any good", function() {
-    expect(country.tariffForGood(good)).not.toBe(null);
+  it("reports sensitivity for a good", function() {
+    expect(country.sensitivityFor(good)).toBe(1.0);
   });
 
-  it("stores tariff for particular good", function() {
-    expect(country.tariffForGood(good).get('rate')).toBe(0.0)
-    tariff = country.tariffForGood(good);
-    tariff.set('rate', 0.1)
-    expect(country.tariffForGood(good).get('rate')).toBe(0.1)
+  it("reports basePrice for a good", function() {
+    expect(country.basePriceFor(good)).toBe(1);
   });
 
-  it("has domestic price greater than base price with tariff", function() {
-    country.tariffForGood(good).set('rate', 0.1);
-    expect(country.domesticPrice(good)).toBeGreaterThan(good.get('basePrice'));
+  it("reports demand for a good", function() {
+    expect(country.demandFor(good)).toBe(1);
   });
 
+  it("has actual price of base price without tariff", function() {
+    country.tariffFor(good).set('rate', 0.0);
+    expect(country.actualPriceFor(good)).toBe(country.basePriceFor(good));
+  });
+
+  it("has actual price greater than base price with tariff", function() {
+    country.tariffFor(good).set('rate', 0.1);
+    expect(country.actualPriceFor(good)).toBeGreaterThan(country.basePriceFor(good));
+  });
+
+  it("has higher prices with higher tariff", function() {
+    country.tariffFor(good).set('rate', 0.1);
+    var price1 = country.actualPriceFor(good);
+    country.tariffFor(good).set('rate', 0.2);
+    var price2 = country.actualPriceFor(good);
+    expect(price2).toBeGreaterThan(price1);
+  });
+
+  it("has higher prices with higher sensitivity", function() {
+    country.tariffFor(good).set('rate', 0.1);
+    var price1 = country.actualPriceFor(good);
+    country.get('sensitivities')[good.get('name')] = 2.0;
+    var price2 = country.actualPriceFor(good);
+    expect(price2).toBeGreaterThan(price1);
+  });
+});
+
+describe("Citizens", function() {
+  var country;
+  var citizens;
+  var good;
+
+  beforeEach(function() {
+    good = new Good({name: 'tea'});
+    country = new Country({
+        'tariffs': {'tea': new Tariff({rate: 0.05})},
+        'sensitivities': {'tea': 1.0},
+        'basePrices': {'tea': 1},
+        'demands': {'tea': 1}
+    });
+    citizens = new Citizens({country: country});
+  });
+
+  it("has an expected price for its consumption", function() {
+    expect(citizens.expectedPriceFor(good)).toBe(1.1);
+  });
+
+  it("will be happy if expected price is more than actual", function() {
+    expect(citizens.expectedPriceFor(good)).toBeGreaterThan(country.actualPriceFor(good));
+    expect(citizens.moodFor(good)).toBeGreaterThan(0);
+  });
+
+  it("will be sad if expected price is less than actual", function() {
+    country.tariffFor(good).set('rate', 1.5);
+    expect(citizens.expectedPriceFor(good)).toBeLessThan(country.actualPriceFor(good));
+    expect(citizens.moodFor(good)).toBeLessThan(0);
+  });
+});
+
+describe("Business", function() {
+  var country;
+  var business;
+  var good;
+
+  beforeEach(function() {
+    good = new Good({name: 'tea'});
+    country = new Country({
+        'tariffs': {'tea': new Tariff({rate: 0.05})},
+        'sensitivities': {'tea': 1.0},
+        'basePrices': {'tea': 1},
+        'demands': {'tea': 1}
+    });
+    business = new Business({country: country});
+  });
+
+  it("will be sad if expected price is more than actual", function() {
+    expect(business.expectedPriceFor(good)).toBeGreaterThan(country.actualPriceFor(good));
+    expect(business.moodFor(good)).toBeLessThan(0);
+  });
+
+  it("will be sad if expected price is less than actual", function() {
+    country.tariffFor(good).set('rate', 1.5);
+    expect(business.expectedPriceFor(good)).toBeLessThan(country.actualPriceFor(good));
+    expect(business.moodFor(good)).toBeGreaterThan(0);
+  });
 });

@@ -1,3 +1,4 @@
+
 Foundations:
 Comparative Advantage
 - The country is said to have a comparative advantage over another country if it
@@ -21,42 +22,3 @@ Dynamics of trade wars
   war despite retaliation, if its elasticity of demand for imports  is
   significantly higher than opponent’s.
 
-Game Form
-- Turn by turn over a period of 'years'
-- inputs -> take turn -> receive feedback ad nauseum
-
-STATE
-- independent:
-    - tariff levels (player inputs)
-    - oil prices
-- dependent
-    - price levels
-    - output?
-    - productivity?
-    - hostility levels
-
-Interface
-- Sliders to input tariff values
-- feedback in price levels
-- Feedback from:
-    - Citizens
-    - Business poeple
-    - Trade partners
-- A graph of tariff changes over time
-
-- Cost changes should be roughly related to the Data supplied
-
-First version
-- play as India
-- One good: shoes
-    - one price
-    - one tarriff
-- One interest group: citizens
-- no 'opponent'
-
-Ideas to make it varied:
-- Business interests can probabilistically ask for subsidies and get pissed off
-  if they're turned down.
-- Citizens can probabilistically complain about prices and similarly get pissed
-  off
-- Oil price shocks must be responded to

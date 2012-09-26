@@ -1,0 +1,44 @@
+- set slider to correct position based on tariff
+- interest groups are happy based on whether the prices they face or greater or
+ lower than expectations.
+- model interest group: citizens
+   - They want to buy a fixed basket of goods (try and get realistic
+     quantities and prices)
+   - based on the variation of the price of this basket, they are happy or
+     unhappy
+   - in this model then, consumption is fixed, happiness varies
+   - nb. keep the quantities/expected prices broken out by good, so that
+     citizens can state the cause of their unhappiness
+- model interest group: business
+   - country's consumption is supplied domestically/from abroad
+   - Assume total consumption remains the same. Could be two effects:
+       - price differential between foreign/domestic suppliers
+       - change in proportion of domestic/foreign consumption caused by price
+         differential
+
+TODO:
+- Allow interst groups to feed back their preferences
+- Implement finish turn and change state
+    - Apply rules
+    - Display the results
+    - Set up for subsequent turn
+- read up on routing to decide whether that's the way to go
+- Cost changes should be roughly related to the Data supplied
+- break out business interests into importers and exporters
+- model trade partners as interest groups
+- A graph of tariff changes over time
+
+
+Ideas
+- Consumers/producers should start off happy/sad based on country properties
+- Can choose different starting countries with different qualities - free trade
+  or restricted trade
+- Business interests can probabilistically ask for subsidies and get pissed off
+  if they're turned down.
+- Citizens can probabilistically complain about prices and similarly get pissed
+  off
+- Oil price shocks must be responded to correctly
+    - boosts price - bring down tariffs to keep people happy?
+- Model productivity levels
+- model Hostility levels
+- Government gets income from tariffs
