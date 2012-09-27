@@ -16,6 +16,11 @@
     <script src="static/js/lib/bootstrap.js" type="text/javascript"></script>
     <script src="static/js/tradewar.js" type="text/javascript"></script>
 
+    <script type='text/html' id='interestGroupTemplate'>
+        <div class="mood">
+            <span class="value">{{ name }} have mood {{ mood }} about {{ good }}</span>
+        </div>
+    </script>
 
     <script type='text/html' id='tariffTemplate'>
         <div class="tariffControl">
@@ -25,9 +30,29 @@
             <span class="value"></span>
         </div>
     </script>
+
+    <script type='text/html' id='adjustTemplate'>
+        <div id="controls">
+        </div>
+
+        <a class="btn" id="finishTurn" href="#next">
+            Finish Turn
+        </a>
+    </script>
+
+    <script type='text/html' id='feedbackTemplate'>
+        <div id="feedback">
+        </div>
+
+        <a class="btn" id="finishTurn" href="#adjust">
+            Next Turn
+        </a>
+    </script>
 </head>
 <body>
-    <div id="controls">
+    <h1>Trade War!</h1>
+    <div id="game">
     </div>
+
 </body>
 </html>
