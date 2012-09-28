@@ -95,36 +95,57 @@ describe("Country", function() {
 describe("Citizens", function() {
   var country;
   var citizens;
-  var good;
+  var good1;
+  var good2;
 
   beforeEach(function() {
-    good = new Good({name: 'tea'});
+    good1 = new Good({name: 'tea'});
+    good2 = new Good({name: 'coffee'});
     country = new Country({
-        'tariffs': {'tea': new Tariff({rate: 0.05})},
-        'sensitivities': {'tea': 1.0},
-        'basePrices': {'tea': 1},
-        'demands': {'tea': 1}
+        'relevantGoods': [good1, good2],
+        'tariffs': {
+          'tea': new Tariff({rate: 0.05}),
+          'coffee': new Tariff({rate: 0.1})
+        },
+        'sensitivities': {
+          'tea': 1.0,
+          'coffee': 1.0
+        },
+        'basePrices': {
+          'tea': 1,
+          'coffee': 1
+        },
+        'demands': {
+          'tea': 1,
+          'coffee': 1
+       }
     });
     citizens = new Citizens({country: country});
   });
 
   it("has an expected price for its consumption", function() {
-    expect(citizens.expectedPriceFor(good)).toBe(1.1);
+    expect(citizens.expectedPriceOfConsumption(good1)).toBe(1.1);
   });
 
   it("will be happy if expected price is more than actual", function() {
-    expect(citizens.expectedPriceFor(good)).toBeGreaterThan(country.actualPriceFor(good));
-    expect(citizens.moodFor(good)).toBeGreaterThan(0);
+    expect(citizens.expectedPriceOfConsumption(good1)).toBeGreaterThan(country.actualPriceFor(good1));
+    expect(citizens.moodFor(good1)).toBeGreaterThan(0);
   });
 
   it("will be sad if expected price is less than actual", function() {
-    country.tariffFor(good).set('rate', 1.5);
-    expect(citizens.expectedPriceFor(good)).toBeLessThan(country.actualPriceFor(good));
-    expect(citizens.moodFor(good)).toBeLessThan(0);
+    country.tariffFor(good1).set('rate', 1.5);
+    expect(citizens.expectedPriceOfConsumption(good1)).toBeLessThan(country.actualPriceFor(good1));
+    expect(citizens.moodFor(good1)).toBeLessThan(0);
+  });
+
+  it("will have an average mood based on individual moods", function() {
+    expect(citizens.moodFor(good2)).toBeLessThan(citizens.moodFor(good1));
+    expect(citizens.averageMood()).toBeLessThan(citizens.moodFor(good1));
+    expect(citizens.averageMood()).toBeGreaterThan(citizens.moodFor(good2));
   });
 });
 
-describe("Business", function() {
+describe("Producers", function() {
   var country;
   var business;
   var good;
@@ -137,17 +158,85 @@ describe("Business", function() {
         'basePrices': {'tea': 1},
         'demands': {'tea': 1}
     });
-    business = new Business({country: country});
+    business = new Producers({country: country});
   });
 
   it("will be sad if expected price is more than actual", function() {
-    expect(business.expectedPriceFor(good)).toBeGreaterThan(country.actualPriceFor(good));
+    expect(business.expectedPriceOfConsumption(good)).toBeGreaterThan(country.actualPriceFor(good));
     expect(business.moodFor(good)).toBeLessThan(0);
   });
 
   it("will be sad if expected price is less than actual", function() {
     country.tariffFor(good).set('rate', 1.5);
-    expect(business.expectedPriceFor(good)).toBeLessThan(country.actualPriceFor(good));
+    expect(business.expectedPriceOfConsumption(good)).toBeLessThan(country.actualPriceFor(good));
     expect(business.moodFor(good)).toBeGreaterThan(0);
+  });
+});
+
+describe("GameModel", function() {
+  var game;
+  var goodA = new Good({name: 'a'});
+  var goodB = new Good({name: 'b'});
+
+  beforeEach(function() {
+    country = new Country({
+        'tariffs': {
+          'a': new Tariff({'rate': 0.0}),
+          'b': new Tariff({'rate': 0.0})
+        },
+        'basePrices': {
+          'a': 1,
+          'a': 1,
+        },
+        'demands': {
+          'a': 1,
+          'a': 1,
+        },
+        'sensitivities': {
+          'a': 1,
+          'a': 1,
+        },
+        'relevantGoods': [goodA, goodB],
+    });
+    game = new GameModel({country: country});
+  });
+
+  it("should initialize historic data", function() {
+    expect(game.get('historicPrices').getData(goodA).length).toEqual(1);
+  });
+
+  it("should advance the year on nextTurn", function() {
+    var year = game.get('year');
+    game.trigger('nextTurn');
+    expect(game.get('year')).toEqual(year + 1);
+  });
+
+  it("should record detect goods changed this turn", function() {
+    game.trigger('nextTurn');
+    expect(game.get('goodsChangedThisTurn')).toEqual([]);
+    game.get('country').tariffFor(goodA).set('rate', 1.0);
+    game.trigger('nextTurn');
+    expect(game.get('goodsChangedThisTurn')).toEqual([goodA]);
+  });
+});
+
+describe("HistoricDataByGood", function() {
+  var hdbg;
+  var good = new Good({name: 'tea'});
+  beforeEach(function() {
+    hdbg = new HistoricDataByGood();
+  });
+
+  it("should record the data against a particular good", function() {
+    expect(hdbg.getData(good)).toEqual([]);
+    hdbg.record(good, 1.0);
+    expect(hdbg.getData(good)).toEqual([1.0]);
+  });
+
+  it("should report data in order of insertion", function() {
+    hdbg.record(good, 1.0);
+    expect(hdbg.getData(good)).toEqual([1.0]);
+    hdbg.record(good, 2.0);
+    expect(hdbg.getData(good)).toEqual([1.0, 2.0]);
   });
 });

@@ -16,23 +16,49 @@
     <script src="static/js/lib/bootstrap.js" type="text/javascript"></script>
     <script src="static/js/tradewar.js" type="text/javascript"></script>
 
-    <script type='text/html' id='interestGroupTemplate'>
+    <script type='text/html' id='interestGroupGoodTemplate'>
         <div class="mood">
             <span class="value">{{ name }} have mood {{ mood }} about {{ good }}</span>
         </div>
     </script>
 
-    <script type='text/html' id='tariffTemplate'>
-        <div class="tariffControl">
-            <div class="slider"></div>
+    <script type='text/html' id='interestGroupMoodTemplate'>
+        <div class="mood">
+            <span class="value">{{ name }} have mood {{ mood }}</span>
         </div>
-        <div class="tariffValue">
-            <span class="value"></span>
+    </script>
+
+    <script type='text/html' id='tariffTemplate'>
+        <div class="row">
+            <div class="span6">
+                {{ nameCapital }} tariff rate <span class="tariffValue"></span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="tariffControl span4">
+                <div class="slider"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="span6">
+                {{ nameCapital }} will cost approximately <span class="priceValue"></span>
+            </div>
         </div>
     </script>
 
     <script type='text/html' id='adjustTemplate'>
-        <div id="controls">
+        <div class="row">
+            <div class="span6" id="year">
+                <h3>The year is {{ year }}...</h3>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="span6" id="controls">
+            </div>
+
+            <div class="span6" id="mood">
+            </div>
         </div>
 
         <a class="btn" id="finishTurn" href="#next">
@@ -50,9 +76,12 @@
     </script>
 </head>
 <body>
-    <h1>Trade War!</h1>
-    <div id="game">
+    <div class="container">
+        <h1>Trade War!</h1>
     </div>
-
+    <div class="container well" id="gameContainer">
+        <div id="game">
+        </div>
+    </div>
 </body>
 </html>

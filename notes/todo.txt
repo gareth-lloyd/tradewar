@@ -15,30 +15,42 @@
        - price differential between foreign/domestic suppliers
        - change in proportion of domestic/foreign consumption caused by price
          differential
-
-TODO:
-- Allow interst groups to feed back their preferences
 - Implement finish turn and change state
     - Apply rules
     - Display the results
     - Set up for subsequent turn
 - read up on routing to decide whether that's the way to go
+- Consumers/producers should start off happy/sad based on country properties
+- record the year, test year changes at turn transition
+    - signals?
+- include prices next to tariff rates, and show the impact on tariff changes
+- make it record historic prices at every change of turn
+
+
+TODO:
+- detect changedGoods
+- Add in information about actual demands and the amount people are 
+  paying in excess of what they should in fact be paying
+- beautify interst groups feedback
 - Cost changes should be roughly related to the Data supplied
+- Model the opposing country
 - break out business interests into importers and exporters
 - model trade partners as interest groups
 - A graph of tariff changes over time
-
-
-Ideas
-- Consumers/producers should start off happy/sad based on country properties
-- Can choose different starting countries with different qualities - free trade
-  or restricted trade
 - Business interests can probabilistically ask for subsidies and get pissed off
   if they're turned down.
 - Citizens can probabilistically complain about prices and similarly get pissed
   off
-- Oil price shocks must be responded to correctly
+- Oil price shocks (increase or decrease) can happen
+    - a 'news' object which can modify game variables and report an event
     - boosts price - bring down tariffs to keep people happy?
+
+
+IDEAS
+- make price expectations depend on the last x years of price history
+- Government income from tariffs, spending on trade easing?
+- Can choose different starting countries with different qualities - free trade
+  or restricted trade
 - Model productivity levels
 - model Hostility levels
-- Government gets income from tariffs
+- display other data for the year in question, and 
