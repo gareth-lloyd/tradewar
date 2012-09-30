@@ -49,6 +49,9 @@ var HistoricDataByGood = Backbone.Model.extend({
         else
             return [];
     },
+    getPercent: function(good) {
+        return _(this.getData(good)).map(function(val) { return val * 100 });
+    },
     record: function(good, value) {
         var name = good.get('name');
         var data = this.get('data');
@@ -146,6 +149,24 @@ var TariffChangeView = Backbone.View.extend({
             goodName: this.options.good.get('name')
         };
         $(this.el).append(ich.tariffChangeTemplate(attrs));
+        var graphDiv = this.$('.graph')[0];
+        new Highcharts.Chart({
+             chart: {
+                renderTo: graphDiv,
+                type: 'line',
+                height: '200'
+             },
+             yAxis: {
+                title: {
+                   text: this.options.country.get('currency')
+                }
+             },
+             title: {text: null},
+             series: [{
+                showInLegend: false,
+                data: this.options.country.historicPrices.getData(this.options.good)
+             }]
+         });
         return this;
     }
 });
@@ -328,6 +349,7 @@ var InterestGroupGoodView = Backbone.View.extend({
 
         var moodValue = this.model.recentMoodChangeFor(this.options.good);
         this.$('img').addClass(this.model.moodColourClass(moodValue));
+
         return this;
     }
 });
@@ -425,6 +447,24 @@ var TradingPartnerResponseView = Backbone.View.extend({
             good: this.options.good
         }).render();
         this.$('.exporterResponse').append(exporterResponse.el);
+        var graphDiv = this.$('.graph')[0];
+        new Highcharts.Chart({
+                 chart: {
+                    renderTo: graphDiv,
+                    type: 'line',
+                    height: '200'
+                 },
+                 yAxis: {
+                    title: {
+                       text: '%'
+                    }
+                 },
+                 title: {text: null},
+                 series: [{
+                    showInLegend: false,
+                    data: this.model.historicTariffs.getPercent(this.options.good)
+                 }]
+              });
         return this;
     }
 });
@@ -521,7 +561,7 @@ var GameModel = Backbone.Model.extend({
     ],
     // Central event dispatcher and holder of game state
     defaults: {
-        year: 2002,
+        year: 2012,
         country: INDIA,
         partner: CHINA,
         goods: [GOODS.TEA],
@@ -658,6 +698,7 @@ var FeedbackGameView = GameView.extend({
             var view = new TradingPartnerResponseView({
                 model: this.partner, good: good, exporters: this.exporters});
             partnerFeedbackDiv.append(view.render().el);
+            
         }.bind(this));
 
         var changedGoods = this.country.historicTariffs.changedGoods(GOODS.ALL_GOODS);
@@ -677,7 +718,6 @@ var FeedbackGameView = GameView.extend({
                 model: this.producers, good: good});
             div.append(view.render().el);
 
-            console.log('appending');
             feedbackDiv.append(tariffChangeView.el);
         }.bind(this));
         if (changedGoods.length == 0 && partnerChangedGoods.length == 0) {
@@ -711,7 +751,7 @@ $(function() {
         next:  function() {
             GAME.trigger('playerTurnOver');
             GAME.trigger('compTurnStart');
-            if (GAME.get('year') == 2012)
+            if (GAME.get('year') == 2022)
                 this.navigate('endgame', true);
             else
                 this.navigate('feedback', true);

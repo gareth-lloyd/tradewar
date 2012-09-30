@@ -1,9 +1,0 @@
-actualPrice = basePrice + (basePrice * tariff * sensitivity)
-
-a = b + bts
-a = (1 + ts)b
-b = a / (1 + ts)
-
-tea
-b = 25 / (1 + 1 * 0.45)
-

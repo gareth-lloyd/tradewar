@@ -1,3 +1,0 @@
-
-We are {{ mood }} that the price of {{ good }} has {{ change}} by {{ amount }}.
-{{ additional }}
