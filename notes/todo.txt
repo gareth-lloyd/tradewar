@@ -52,14 +52,14 @@
     - two prices on the page: current price, and if you change the tariff, the
       predicted price appears.
     - actual price changes should be probabilistic
-
-TODO:
 - start the game with a message from Main trading partner
 - btn classes
 - come up with an overall score based on historic moods
     - play through different ways and decide what a good score for a particular
       country is. 
     - award points for exceeding that.
+
+TODO:
 - messages from partners based on whether or not they exceed your tariff
   movement.
 - graph of tariff changes over time

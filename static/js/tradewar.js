@@ -1,3 +1,14 @@
+var average = function(series) {
+    series = _(series);
+    var size = series.size();
+    if (size == 0)
+        return NaN;
+
+    var total = series.reduce(function(memo, num) {
+        return memo + num;
+    }, 0);
+    return total / size;
+};
 var chooseByValue = function (possibleValues, value) {
     for (i = 0; i < possibleValues.length; i++) {
         var valueObj = possibleValues[i];
@@ -64,6 +75,11 @@ var HistoricDataByGood = Backbone.Model.extend({
         return _(allGoods).filter(function(good) {
             return this.changeIn(good) != 0;
         }.bind(this));
+    },
+    average: function(good) {
+        var data = this.getData(good);
+        var avg = average(data);
+        return avg;
     }
 });
 var Tariff = Backbone.Model.extend({
@@ -149,7 +165,7 @@ var InterestGroup = Backbone.Model.extend({
         {lim: -0.35, value: 'apoplectic'},
         {lim: -0.15, value: 'angry'},
         {lim: -0.09, value: 'unhappy'},
-        {lim: -0.01, value: 'miffed'},
+        {lim: -0.01, value: 'grumbling'},
         {lim: 0.05, value: 'pleased'},
         {lim: 0.1, value: 'happy'},
         {lim: 0.2, value: 'thrilled'},
@@ -456,11 +472,11 @@ CHINA = new TradingPartner({
     flag25: 'static/img/china25.png',
    'currency': 'RMB',
     'tariffs': {
-      'tea': new Tariff({rate: 0.9}),
-      'soap': new Tariff({rate: 0.2}),
+      'tea': new Tariff({rate: 0.65}),
+      'soap': new Tariff({rate: 0.1}),
       'water': new Tariff({rate: 0.2}),
-      'chicken': new Tariff({rate: 0.4}),
-      'shoes': new Tariff({rate: 0.05})
+      'chicken': new Tariff({rate: 0.25}),
+      'shoes': new Tariff({rate: 0})
     },
     'sensitivities': {
       'tea': 0.45,
@@ -489,9 +505,23 @@ INDIAN_PRODUCERS = new Producers({country: INDIA});
 INDIAN_EXPORTERS = new Exporters({country: CHINA});
 CHINA.set('counterpart', INDIA);
 var GameModel = Backbone.Model.extend({
+    scoreWords: [
+        {lim: -.2, value: 'detested'},
+        {lim: -.05, value: 'disliked'},
+        {lim: .05, value: 'tolerated'},
+        {lim: .1, value: 'esteemed'},
+        {lim: 10, value: 'beloved'}
+    ],
+    overallScoreWords: [
+        {lim: -.2, value: 'dismayed'},
+        {lim: -.05, value: 'unimpressed'},
+        {lim: .05, value: 'somewhat pleased'},
+        {lim: .1, value: 'happy'},
+        {lim: 10, value: 'over the moon'}
+    ],
     // Central event dispatcher and holder of game state
     defaults: {
-        year: 1990,
+        year: 2002,
         country: INDIA,
         partner: CHINA,
         goods: [GOODS.TEA],
@@ -501,6 +531,7 @@ var GameModel = Backbone.Model.extend({
     },
     initialize: function() {
         this.on('playerTurnOver', this.advanceYear, this);
+        this.on('gameOver', this.finalizeScores, this);
 
         var country = this.get('country');
         this.on('playerTurnOver', country.recordHistory, country);
@@ -517,6 +548,35 @@ var GameModel = Backbone.Model.extend({
     },
     advanceYear: function() {
         this.set('year', this.get('year') + 1);
+    },
+    score: function(name) {
+        var moods = this.get(name).historicMoods;
+        var averages = _(GOODS.ALL_GOODS).map(function(good) {
+            return moods.average(good);
+        });
+        console.log(averages);
+        return average(averages);
+    },
+    finalizeScores: function () {
+        this.set('citizensScore', this.score('citizens'));
+        this.set('citizensScoreWord',
+                chooseByValue(this.scoreWords, this.get('citizensScore')));
+
+        this.set('producersScore', this.score('producers'));
+        this.set('producersScoreWord',
+                chooseByValue(this.scoreWords, this.get('producersScore')));
+
+        this.set('exportersScore', this.score('exporters'));
+        this.set('exportersScoreWord',
+                chooseByValue(this.scoreWords, this.get('exportersScore')));
+
+        this.set('overall', average([
+            this.get('citizensScore'),
+            this.get('exportersScore'),
+            this.get('producersScore')
+        ]));
+        this.set('overallWord', chooseByValue(this.overallScoreWords, this.get('overall')));
+
     }
 });
 var GameView = Backbone.View.extend({
@@ -531,6 +591,16 @@ var GameView = Backbone.View.extend({
         this.render();
     }
 });
+var EndGameView = GameView.extend({
+    render: function() {
+        $(this.el).empty();
+        attrs = this.model.toJSON();
+        attrs.countryPicture = this.country.get('flag100');
+        attrs.countryName = this.country.get('name');
+        $(this.el).append(ich.endGameTemplate(attrs));
+        return this;
+    }
+});
 var IntroGameView = GameView.extend({
     render: function() {
         $(this.el).empty();
@@ -539,7 +609,8 @@ var IntroGameView = GameView.extend({
         attrs.countryName = this.country.get('name');
         attrs.partnerPicture = this.partner.get('flag100');
         attrs.partnerName = this.partner.get('name');
-        $(this.el).append(ich.introTemplate(attrs));
+        var template = this.options.template;
+        $(this.el).append(ich[template](attrs));
         return this;
     }
 });
@@ -581,14 +652,15 @@ var FeedbackGameView = GameView.extend({
         var feedbackDiv = this.$('#domesticFeedback');
         var partnerFeedbackDiv = this.$('#partnerFeedback');
 
-        var changedGoods = this.partner.historicTariffs.changedGoods(GOODS.ALL_GOODS);
-        _(changedGoods).each(function(good) {
+        var partnerChangedGoods = this.partner.historicTariffs.changedGoods(
+            GOODS.ALL_GOODS);
+        _(partnerChangedGoods).each(function(good) {
             var view = new TradingPartnerResponseView({
                 model: this.partner, good: good, exporters: this.exporters});
             partnerFeedbackDiv.append(view.render().el);
         }.bind(this));
 
-        changedGoods = this.country.historicTariffs.changedGoods(GOODS.ALL_GOODS);
+        var changedGoods = this.country.historicTariffs.changedGoods(GOODS.ALL_GOODS);
         _(changedGoods).each(function(good) {
             var tariffChangeView = new TariffChangeView({
                 tariff: this.country.tariffFor(good),
@@ -608,6 +680,9 @@ var FeedbackGameView = GameView.extend({
             console.log('appending');
             feedbackDiv.append(tariffChangeView.el);
         }.bind(this));
+        if (changedGoods.length == 0 && partnerChangedGoods.length == 0) {
+            feedbackDiv.text(" You didn't make any changes. Yawn." );
+        }
         return this;
     }
 });
@@ -616,14 +691,18 @@ $(function() {
     var GAME = new GameModel();
     var GameRouter = Backbone.Router.extend({
         routes: {
-            'intro': 'intro',
+            'countryIntro': 'countryIntro',
+            'partnerIntro': 'partnerIntro',
             'adjust': 'adjust',
             'next': 'next',
             'feedback': 'feedback',
             'endgame': 'endgame'
         },
-        intro: function() {
-            new IntroGameView({model: GAME});
+        countryIntro: function() {
+            new IntroGameView({model: GAME, template: 'countryIntroTemplate'});
+        },
+        partnerIntro: function() {
+            new IntroGameView({model: GAME, template: 'partnerIntroTemplate'});
         },
         adjust: function() {
             GAME.trigger('playerTurnStart');
@@ -632,17 +711,22 @@ $(function() {
         next:  function() {
             GAME.trigger('playerTurnOver');
             GAME.trigger('compTurnStart');
-            this.navigate('feedback', true);
+            if (GAME.get('year') == 2012)
+                this.navigate('endgame', true);
+            else
+                this.navigate('feedback', true);
         },
         feedback:  function() {
             GAME.trigger('compTurnOver');
             new FeedbackGameView({model: GAME});
         },
         endgame:  function() {
+            GAME.trigger('gameOver');
+            new EndGameView({model: GAME});
         },
     });
     var router = new GameRouter();
     Backbone.history.start();
-    router.navigate('intro', true);
+    router.navigate('countryIntro', true);
 });
 
