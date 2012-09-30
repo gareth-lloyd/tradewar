@@ -30,48 +30,47 @@
     - complain about actual price change/foreign competition
     - colour
 - set base prices so that actual prices are obtained off the bat
-
-
-TODO:
 - Model opposing country
     - starts with retaliatory tariffs of some proportion of domestic tariffs
       (probabilistic, realistic?)
     - opposing country tariffs appear on the adjust screen
-
-    - exporter's interests depend on the opposing country (india's main trade
-      partner - China)
     - opposing country can change tariffs (probabilistically) if there's enough
       difference.
 - move detectChanged to a changedGoods method on Histric
 - move histories to their relveant objects and sign them up to events
-- images for interest groups
+- exporter's interests depend on the opposing country (india's main trade
+  partner - China)
 - move relevant goods to GameModel
+- sort out the moods
+- images for interest groups
 - Icons instead of background colours for moods
-- record historic moods at game change
-- start the game with a message from China
-- change price change feedback
+- sort out the average feedback
+- The feedback should be grouped, wiht individual interet groups stating
+  their case, rather than separate.
+- improve partner response feedback: exporters should complain
+- change price adjustment
+    - two prices on the page: current price, and if you change the tariff, the
+      predicted price appears.
     - actual price changes should be probabilistic
-    - The feedback should be grouped, wiht individual interet groups stating
-      their case, rather than separate.
+
+TODO:
+- start the game with a message from Main trading partner
+- btn classes
 - come up with an overall score based on historic moods
     - play through different ways and decide what a good score for a particular
       country is. 
     - award points for exceeding that.
-
-- Business interests can probabilistically 'choose' a good on which to ask for
-  subsidies and get even more pissed off if they're turned down.
-- Citizens can probabilistically complain about prices and similarly get pissed
-  off
+- messages from partners based on whether or not they exceed your tariff
+  movement.
+- graph of tariff changes over time
 - Oil price shocks (increase or decrease) (which add a fixed component to can happen
     - a 'news' object which can modify game variables and report an event
     - boosts price - bring down tariffs to keep people happy?
-- A graph of tariff changes over time
+- Government income from tariffs, spending on trade easing?
 
 IDEAS
 - make price expectations depend on the last x years of price history
-- Government income from tariffs, spending on trade easing?
 - Can choose different starting countries with different qualities - free trade
   or restricted trade
 - Model productivity levels
-- model Hostility levels
 - display other data for the year in question, and 

@@ -17,8 +17,19 @@
     <script src="static/js/lib/bootstrap.js" type="text/javascript"></script>
     <script src="static/js/tradewar.js" type="text/javascript"></script>
 
+    <script type="text/html" id='tariffChangeTemplate'>
+        <div class="row">
+            <div class="priceFeedback span2">
+                <div><img src="{{ picture }}" /></div>
+                <div>Your policy has {{ changeDir }} the price of {{ goodName }} by {{ change }} {{ currency }} </div>
+            </div>
+            <div class="interestGroupFeedback span6">
+            </div>
+        </div>
+    </script>
+
     <script type='text/html' id='interestGroupGoodTemplate'>
-        <div class="span2 interestGroupPicture">
+        <div class="span1 interestGroupPicture">
             <img src="{{ picture }}" />
         </div>
         <div class="span4 mood">
@@ -27,36 +38,49 @@
     </script>
 
     <script type='text/html' id='responseTemplate'>
-        <div>
-        {{ countryName }} changed the tariff on {{ goodName }} from {{ oldTariff }} 
-        to {{ newTariff }}.
+        <div class="responseOverview span2">
+            <div>
+                <img src="{{ flag }}" />
+                <img src="{{ picture }}" />
+            </div>
+            <div>In response to your policies,
+                {{ countryName }} changed their tariff on {{ goodName }}
+                from {{ oldTariff }} to {{ newTariff }}.
+            </div>
         </div>
+        <div class="exporterResponse span6">
+        <div>
     </script>
+
     <script type='text/html' id='interestGroupMoodTemplate'>
-        <span class="value">{{ mood }}</span>
+        <div class="row">
+            <div class="span1 picture">
+                <img src="{{ picture }}" />
+            </div>
+            <div class="span2 value">{{ mood }}</div>
+        </div>
     </script>
 
     <script type='text/html' id='tariffTemplate'>
-        <div class="row">
-            <div class="span1">
-                <img src="{{ picture }}" />
-            </div>
-            <div class="span2">
-                {{ nameCapital }}
-            </div>
-            <div class="tariffControl span4">
-                <div class="slider"></div>
-            </div>
-            <div class="span1">
-                <span class="tariffValue"></span>
-            </div>
-            <div class="span2">
-                <span class="priceValue"></span>
-            </div>
-            <div class="span2">
-                {{ partnerRate }}
-            </div>
-        </div>
+        <td>
+            <img src="{{ picture }}" />
+        </td>
+        <td>
+            {{ nameCapital }}
+        </td>
+        <td>
+            <span class="actualPriceValue"></span>
+        </td>
+        <td style="width: 250px">
+            <div class="slider"></div>
+            <span class="tariffValue"></span>
+        </td>
+        <td>
+            <span class="predictedPriceValue"></span>
+        </td>
+        <td>
+            {{ partnerRate }}
+        </td>
     </script>
 
     <script type='text/html' id='adjustTemplate'>
@@ -72,22 +96,99 @@
         </div>
 
         <div class="row">
-            <div class="span12" id="controls">
-            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>
+                        </th>
+                        <th>
+                        </th>
+                        <th>
+                            <img src="{{ countryPicture }}" class="tableImg"/>
+                            Current price in {{ countryName }}
+                        </th>
+                        <th>
+                            <img src="{{ countryPicture }}" class="tableImg"/>
+                            Tariff in <br />{{ countryName }}
+                        </th>
+                        <th>
+                            <img src="{{ countryPicture }}" class="tableImg"/>
+                            Predicted price in {{ countryName }}
+                        </th>
+                        <th>
+                            <img src="{{ partnerPicture }}" class="tableImg"/>
+                            Tariff in {{ partnerName }}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="controls">
+                </tbody>
+            </table>
         </div>
-
-        <a class="btn" id="finishTurn" href="#next">
+        <a class="btn btn-success" id="finishTurn" href="#next">
             Finish Turn
         </a>
     </script>
 
     <script type='text/html' id='feedbackTemplate'>
-        <div class="row" id="feedback">
+        <div class="row" id="partnerFeedback">
+        </div>
+        <div class="row" id="domesticFeedback">
         </div>
 
-        <a class="btn" id="finishTurn" href="#adjust">
+        <a class="btn btn-success" id="finishTurn" href="#adjust">
             Next Turn
         </a>
+    </script>
+
+    <script type='text/html' id='introTemplate'>
+        <div class="row">
+        <div class="span10 offset1">
+            <h4>A message from the president of {{ countryName }}!</h4>
+        </div>
+        </div>
+
+        <div class="row">
+        <div class="span10 offset1" style="background:white; padding: 10px; border: 1px solid gray">
+            <p><img src="{{ countryPicture }}" class="letterFlag"/> 
+                <strong></strong>
+            </p>
+            <p>
+            The year is {{ year }}. As the Minister for Trade Policy in
+            {{ countryName }}, your job is to <strong>set tariff levels</strong>
+            to maximize the welfare of your country's <strong>citizens</strong>,
+            <strong>producers</strong> and <strong>exporters</strong>.
+            </p>
+            <p>
+            But you can't just think about {{ countryName }}. Your main trading
+            partner, {{ partnerName }} is watching you carefully and if you set
+            aggressive tariffs, they won't be happy.
+            </p>
+            <p>
+                <ul>
+                    <li>Citizens want low prices for the goods they consume.
+                    High tariffs raise the price of imports and make goods more
+                    expensive.
+                    </li>
+                    <li>Producers want high prices. Tariffs restrict competition
+                    from imports so producers can charge more.
+                    </li>
+                    <li>Exporters want to sell goods to your trading partners.
+                    If {{ partnerName }} set high tariffs, their trade will be
+                    restricted.
+                    </li>
+                </ul>
+            </p>
+            <p>
+            Are you ready to trade?
+            </p>
+
+            <a class="btn btn-success" id="startButton" href="#adjust">
+                Start
+            </a>
+        </div>
+        </div>
+
     </script>
 </head>
 <body>

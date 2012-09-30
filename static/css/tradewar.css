@@ -17,3 +17,17 @@
 .greenBackground{
     background-color: #3ead05;
 }
+.priceFeedback, .responseOverview {
+    padding-left: 10px;
+    text-align: center;
+}
+.interestGroup, .partnerResponse {
+    margin-bottom: 30px;
+}
+#mood {
+    margin-bottom: 20px;
+}
+.tableImg {
+    float: left;
+    margin: 5px 5px 0 0;
+}
