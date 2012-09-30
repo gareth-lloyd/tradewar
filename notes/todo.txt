@@ -25,26 +25,47 @@
     - signals?
 - include prices next to tariff rates, and show the impact on tariff changes
 - make it record historic prices at every change of turn
+- detect changedGoods
+- improve look of interst groups feedback
+    - complain about actual price change/foreign competition
+    - colour
+- set base prices so that actual prices are obtained off the bat
 
 
 TODO:
-- detect changedGoods
-- Add in information about actual demands and the amount people are 
-  paying in excess of what they should in fact be paying
-- beautify interst groups feedback
-- Cost changes should be roughly related to the Data supplied
-- Model the opposing country
-- break out business interests into importers and exporters
-- model trade partners as interest groups
-- A graph of tariff changes over time
-- Business interests can probabilistically ask for subsidies and get pissed off
-  if they're turned down.
+- Model opposing country
+    - starts with retaliatory tariffs of some proportion of domestic tariffs
+      (probabilistic, realistic?)
+    - opposing country tariffs appear on the adjust screen
+
+    - exporter's interests depend on the opposing country (india's main trade
+      partner - China)
+    - opposing country can change tariffs (probabilistically) if there's enough
+      difference.
+- move detectChanged to a changedGoods method on Histric
+- move histories to their relveant objects and sign them up to events
+- images for interest groups
+- move relevant goods to GameModel
+- Icons instead of background colours for moods
+- record historic moods at game change
+- start the game with a message from China
+- change price change feedback
+    - actual price changes should be probabilistic
+    - The feedback should be grouped, wiht individual interet groups stating
+      their case, rather than separate.
+- come up with an overall score based on historic moods
+    - play through different ways and decide what a good score for a particular
+      country is. 
+    - award points for exceeding that.
+
+- Business interests can probabilistically 'choose' a good on which to ask for
+  subsidies and get even more pissed off if they're turned down.
 - Citizens can probabilistically complain about prices and similarly get pissed
   off
-- Oil price shocks (increase or decrease) can happen
+- Oil price shocks (increase or decrease) (which add a fixed component to can happen
     - a 'news' object which can modify game variables and report an event
     - boosts price - bring down tariffs to keep people happy?
-
+- A graph of tariff changes over time
 
 IDEAS
 - make price expectations depend on the last x years of price history

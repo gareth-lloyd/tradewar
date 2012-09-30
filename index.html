@@ -10,38 +10,45 @@
 
     <script src="static/js/lib/jquery.js" type="text/javascript"></script>
     <script src="static/js/lib/jquery-ui.js" type="text/javascript"></script>
-    <script src="static/js/lib/ICanHaz.js" type="text/javascript"></script>
+    <script src="static/js/lib/mustache.js" type="text/javascript"></script>
+    <script src="static/js/lib/ICanHaz-no-mustache.js" type="text/javascript"></script>
     <script src="static/js/lib/underscore.js" type="text/javascript"></script>
     <script src="static/js/lib/backbone.js" type="text/javascript"></script>
     <script src="static/js/lib/bootstrap.js" type="text/javascript"></script>
     <script src="static/js/tradewar.js" type="text/javascript"></script>
 
     <script type='text/html' id='interestGroupGoodTemplate'>
-        <div class="mood">
-            <span class="value">{{ name }} have mood {{ mood }} about {{ good }}</span>
+        <div class="span2 interestGroupPicture">
+            <img src="{{ picture }}" />
+        </div>
+        <div class="span4 mood">
+            {{ mood }}
         </div>
     </script>
 
     <script type='text/html' id='interestGroupMoodTemplate'>
-        <div class="mood">
-            <span class="value">{{ name }} have mood {{ mood }}</span>
-        </div>
+        <span class="value">{{ mood }}</span>
     </script>
 
     <script type='text/html' id='tariffTemplate'>
         <div class="row">
-            <div class="span6">
-                {{ nameCapital }} tariff rate <span class="tariffValue"></span>
+            <div class="span1">
+                <img src="{{ picture }}" />
             </div>
-        </div>
-        <div class="row">
+            <div class="span2">
+                {{ nameCapital }}
+            </div>
             <div class="tariffControl span4">
                 <div class="slider"></div>
             </div>
-        </div>
-        <div class="row">
-            <div class="span6">
-                {{ nameCapital }} will cost approximately <span class="priceValue"></span>
+            <div class="span1">
+                <span class="tariffValue"></span>
+            </div>
+            <div class="span2">
+                <span class="priceValue"></span>
+            </div>
+            <div class="span2">
+                {{ partnerRate }}
             </div>
         </div>
     </script>
@@ -54,10 +61,12 @@
         </div>
 
         <div class="row">
-            <div class="span6" id="controls">
+            <div class="span12" id="mood">
             </div>
+        </div>
 
-            <div class="span6" id="mood">
+        <div class="row">
+            <div class="span12" id="controls">
             </div>
         </div>
 
@@ -67,7 +76,7 @@
     </script>
 
     <script type='text/html' id='feedbackTemplate'>
-        <div id="feedback">
+        <div class="row" id="feedback">
         </div>
 
         <a class="btn" id="finishTurn" href="#adjust">

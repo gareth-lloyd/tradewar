@@ -1,3 +1,19 @@
 .tariff {
     margin-bottom: 15px;
 }
+
+.redBackground{
+    background-color: #d4583c;
+}
+.orangeBackground{
+    background-color: #d4812d;
+}
+.neutralBackground{
+    background-color: #c6d4d4;
+}
+.paleGreenBackground{
+    background-color: #add48e;
+}
+.greenBackground{
+    background-color: #3ead05;
+}

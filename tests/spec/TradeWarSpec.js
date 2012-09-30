@@ -131,7 +131,23 @@ describe("Citizens", function() {
     expect(citizens.expectedPriceOfConsumption(good1)).toBeGreaterThan(country.actualPriceFor(good1));
     expect(citizens.moodFor(good1)).toBeGreaterThan(0);
   });
-
+ 
+  it("will produce mood words according to moods", function() {
+    expect(citizens.moodWord(-1)).toEqual('apoplectic');
+    expect(citizens.moodWord(-0.5)).toEqual('apoplectic');
+    expect(citizens.moodWord(-0.499)).toEqual('angry');
+    expect(citizens.moodWord(-0.1)).toEqual('miffed');
+    expect(citizens.moodWord(0.09)).toEqual('pleased');
+    expect(citizens.moodWord(1)).toEqual('ecstatic');
+  });
+  it("will produce mood colours according to moods", function() {
+    expect(citizens.moodColourClass(-1)).toEqual('redBackground');
+    expect(citizens.moodColourClass(-0.5)).toEqual('redBackground');
+    expect(citizens.moodColourClass(-0.499)).toEqual('orangeBackground');
+    expect(citizens.moodColourClass(-0.1)).toEqual('neutralBackground');
+    expect(citizens.moodColourClass(0.09)).toEqual('paleGreenBackground');
+    expect(citizens.moodColourClass(1)).toEqual('greenBackground');
+  });
   it("will be sad if expected price is less than actual", function() {
     country.tariffFor(good1).set('rate', 1.5);
     expect(citizens.expectedPriceOfConsumption(good1)).toBeLessThan(country.actualPriceFor(good1));
@@ -175,6 +191,9 @@ describe("Producers", function() {
 
 describe("GameModel", function() {
   var game;
+  var citizens;
+  var exporters;
+  var producers;
   var goodA = new Good({name: 'a'});
   var goodB = new Good({name: 'b'});
 
@@ -198,24 +217,32 @@ describe("GameModel", function() {
         },
         'relevantGoods': [goodA, goodB],
     });
-    game = new GameModel({country: country});
+    citizens = new Citizens({country: country});
+    producers = new Producers({country: country});
+    exporters = new Exporters({country: country});
+    game = new GameModel({
+        country: country,
+        citizens: citizens,
+        producers: producers,
+        exporters: exporters
+    });
   });
 
   it("should initialize historic data", function() {
     expect(game.get('historicPrices').getData(goodA).length).toEqual(1);
   });
 
-  it("should advance the year on nextTurn", function() {
+  it("should advance the year on playerTurnOver", function() {
     var year = game.get('year');
-    game.trigger('nextTurn');
+    game.trigger('playerTurnOver');
     expect(game.get('year')).toEqual(year + 1);
   });
 
   it("should record detect goods changed this turn", function() {
-    game.trigger('nextTurn');
+    game.trigger('playerTurnOver');
     expect(game.get('goodsChangedThisTurn')).toEqual([]);
     game.get('country').tariffFor(goodA).set('rate', 1.0);
-    game.trigger('nextTurn');
+    game.trigger('playerTurnOver');
     expect(game.get('goodsChangedThisTurn')).toEqual([goodA]);
   });
 });
@@ -238,5 +265,34 @@ describe("HistoricDataByGood", function() {
     expect(hdbg.getData(good)).toEqual([1.0]);
     hdbg.record(good, 2.0);
     expect(hdbg.getData(good)).toEqual([1.0, 2.0]);
+  });
+  it("should report current value", function() {
+    hdbg.record(good, 1.0);
+    expect(hdbg.currentVal(good)).toEqual(1.0);
+    hdbg.record(good, 3.0);
+    expect(hdbg.currentVal(good)).toEqual(3.0);
+  });
+  it("should report previous value", function() {
+    hdbg.record(good, 1.0);
+    hdbg.record(good, 3.0);
+    expect(hdbg.previousVal(good)).toEqual(1.0);
+  });
+  it("should report no change if data is same", function() {
+    hdbg.record(good, 1.0);
+    hdbg.record(good, 1.0);
+    expect(hdbg.changeIn(good)).toEqual(0);
+  });
+  it("should report price changes", function() {
+    hdbg.record(good, 1.0);
+    hdbg.record(good, 3.0);
+    expect(hdbg.changeIn(good)).toEqual(2);
+  });
+  it("should report percentage changed", function() {
+    hdbg.record(good, 1.0);
+    hdbg.record(good, 2.0);
+    expect(hdbg.percentageChange(good)).toEqual(1);
+    hdbg.record(good, 1.0);
+    expect(hdbg.percentageChange(good)).toEqual(-.5);
+
   });
 });
