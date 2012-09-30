@@ -16,6 +16,56 @@ var Good = Backbone.Model.extend({
     }
 });
 
+var GOODS = {
+    TEA: new Good({name: 'tea', picture: 'static/img/tea.png'}),
+    SHOES: new Good({name: 'shoes', picture: 'static/img/shoes.png'}),
+    SOAP: new Good({name: 'soap', picture: 'static/img/soap.png'}),
+    WATER: new Good({name: 'water', picture: 'static/img/water.png'}),
+    CHICKEN: new Good({name: 'chicken', picture: 'static/img/chicken.png'}),
+}
+GOODS.ALL_GOODS = [GOODS.TEA, GOODS.SOAP, GOODS.WATER,
+    GOODS.CHICKEN, GOODS.SHOES];
+
+var HistoricDataByGood = Backbone.Model.extend({
+    initialize: function () {
+        this.set('data', {});
+    },
+    getData: function(good) {
+        var name = good.get('name');
+        var data = this.get('data');
+        if (name in data)
+            return this.get('data')[good.get('name')];
+        else
+            return [];
+    },
+    record: function(good, value) {
+        var name = good.get('name');
+        var data = this.get('data');
+        if (! (name in data))
+            data[name] = [];
+        data[name].push(value);
+    },
+    currentVal: function(good) {
+        var data = this.getData(good);
+        if (data.length)
+            return data[data.length - 1]
+    },
+    previousVal: function(good) {
+        var data = this.getData(good);
+        if (data.length > 1)
+            return data[data.length - 2]
+    },
+    changeIn: function(good) {
+        var currentVal = this.currentVal(good);
+        var lastVal = this.previousVal(good);
+        return currentVal - lastVal;
+    },
+    changedGoods: function(allGoods) {
+        return _(allGoods).filter(function(good) {
+            return this.changeIn(good) != 0;
+        }.bind(this));
+    }
+});
 var Tariff = Backbone.Model.extend({
     defaults: {
         rate: 0.0
@@ -85,7 +135,7 @@ var InterestGroup = Backbone.Model.extend({
         this.recordHistory();
     },
     recordHistory: function () {
-        _(TradeWar.ALL_GOODS).each(function(good) {
+        _(GOODS.ALL_GOODS).each(function(good) {
             this.historicMoods.record(good, this.moodFor(good));
         }.bind(this));
     },
@@ -94,6 +144,13 @@ var InterestGroup = Backbone.Model.extend({
     },
     moodColourClass: function (moodValue) {
         return chooseByValue(this.moodColours, moodValue);
+    },
+    recentMoodChangeFor: function(good) {
+        return this.historicMoods.changeIn(good);
+    },
+    recentPriceChangeFor: function(good) {
+        var prices = this.get('country').historicPrices;
+        return prices.changeIn(good);
     },
     expectedPriceOfConsumption: function(good) {
         var country = this.get('country');
@@ -109,15 +166,11 @@ var InterestGroup = Backbone.Model.extend({
         var actual = this.actualPriceOfConsumption(good);
         return (actual - expected) / expected;
     },
-    recentPriceChangeFor: function(good) {
-        var prices = TradeWar.game.get('historicPrices');
-        return prices.changeIn(good);
-    },
     dampen: function(d) {
         return Math.sqrt(Math.abs(d));
     },
     averageMood: function() {
-        var goods = _(TradeWar.ALL_GOODS);
+        var goods = _(GOODS.ALL_GOODS);
         if (goods.size() < 0)
             return 0
 
@@ -129,7 +182,7 @@ var InterestGroup = Backbone.Model.extend({
     moodTextFor: function(good) {
         var priceChange = this.recentPriceChangeFor(good);
         var attrs = {
-            mood: this.moodWord(this.moodChange(good)),
+            mood: this.moodWord(this.recentMoodChangeFor(good)),
             priceChange: Math.abs(priceChange.toFixed(2)),
             goodName: good.get('name'),
             changeDir: (priceChange < 0) ? 'reduced': 'increased',
@@ -148,9 +201,6 @@ var Citizens = InterestGroup.extend({
         'name': 'Citizens',
         'picture': 'static/img/citizens.png'
     },
-    moodChange: function(good) {
-        return TradeWar.game.get('historicCitizenMoods').changeIn(good);
-    },
     moodFor: function(good) {
         return -this.percentDifferenceFromExpected(good);
     }
@@ -161,9 +211,6 @@ var Producers = InterestGroup.extend({
     defaults: {
         'name': 'Producers',
         'picture': 'static/img/producers.png'
-    },
-    moodChange: function(good) {
-        return TradeWar.game.get('historicProducerMoods').changeIn(good);
     },
     moodFor: function(good) {
         return this.percentDifferenceFromExpected(good);
@@ -176,9 +223,6 @@ var Exporters = InterestGroup.extend({
     defaults: {
         'name': 'Exporters',
         'picture': 'static/img/exporters.png'
-    },
-    moodChange: function(good) {
-        return TradeWar.game.get('historicExporterMoods').changeIn(good);
     },
     moodFor: function(good) {
         var diff = -this.percentDifferenceFromExpected(good);
@@ -207,7 +251,7 @@ var InterestGroupGoodView = Backbone.View.extend({
         attrs.mood = this.model.moodTextFor(this.options.good);
         $(this.el).append(ich.interestGroupGoodTemplate(attrs));
 
-        var moodValue = this.model.moodChange(this.options.good);
+        var moodValue = this.model.recentMoodChangeFor(this.options.good);
         $(this.el).addClass(this.model.moodColourClass(moodValue));
         return this;
     }
@@ -238,11 +282,11 @@ var Country = Backbone.Model.extend({
         return basePrice + (rate * basePrice * sensitivity);
     },
     recordHistory: function () {
-        _(TradeWar.ALL_GOODS).each(function(good) {
-            this.historicPrices.record(good, this..actualPriceFor(good));
+        _(GOODS.ALL_GOODS).each(function(good) {
+            this.historicPrices.record(good, this.actualPriceFor(good));
             this.historicTariffs.record(good, this.tariffFor(good).get('rate'));
         }.bind(this));
-    }
+    },
 });
 
 var TradingPartner = Country.extend({
@@ -250,10 +294,10 @@ var TradingPartner = Country.extend({
         var counterpartRate = this.get('counterpart').tariffFor(good).get('rate');
         var ourRate = this.tariffFor(good).get('rate');
         var diff = counterpartRate - ourRate;
-        return diff * (Math.random() + 0.5));
+        return diff * (Math.random() + 0.5);
     },
     alterTariffsInResponse: function () {
-        var goods = _(TradeWar.ALL_GOODS);
+        var goods = _(GOODS.ALL_GOODS);
         goods.each(function(good) {
             var urgency = this.urgency(good);
             if (Math.abs(urgency) > 0.5) {
@@ -263,145 +307,108 @@ var TradingPartner = Country.extend({
     },
     alterTariff: function (good, amount) {
         var tariff = this.tariffFor(good);
-        tarriff.set('rate', this.getResponseTariff(good));
+        tariff.set('rate', this.getResponseTariff(good));
     },
     getResponseTariff: function(good) {
-        var counterpartRate = this.get('counterpart').tariffFor(good);
-        var wobble = (Math.Random() - 0.5) / 2;
+        var counterpartRate = this.get('counterpart').tariffFor(good).get('rate');
+        var wobble = (Math.random() - 0.5) / 2;
         return Math.min(counterpartRate + wobble, 1);
     }
 });
-
-var TradeWar = {
-    TEA: new Good({name: 'tea'}),
-    SHOES: new Good({name: 'shoes'}),
-    SOAP: new Good({name: 'soap'}),
-    WATER: new Good({name: 'water'}),
-    CHICKEN: new Good({name: 'chicken'}),
-
-    INDIA: new Country({
-        name: 'India',
-        flag: '',
-       'currency': 'INR',
-        'tariffs': {
-          'tea': new Tariff({rate: 1.0}),
-          'soap': new Tariff({rate: 0.1}),
-          'water': new Tariff({rate: 0.3}),
-          'chicken': new Tariff({rate: 0.3}),
-          'shoes': new Tariff({rate: 0.1})
-        },
-        'sensitivities': {
-          'tea': 0.45,
-          'chicken': 0.31,
-          'soap': 0.72,
-          'water': 0.41,
-          'shoes': 0.4,
-        },
-        'basePrices': {
-          'tea': 17.241379,
-          'soap': 17.723880597014925,
-          'water': 12.911843276936776,
-          'chicken': 107.502287282708143,
-          'shoes': 1658.173076923076923
-        },
-        'demands': {
-          'tea': 1.0,
-          'chicken': 1.0,
-          'soap': 1.0,
-          'water': 1.0,
-          'shoes': 1.0
-       }
-    }),
-    CHINA: new TradingPartner({
-        name: 'China',
-        flag: '',
-       'currency': 'RMB',
-        'tariffs': {
-          'tea': new Tariff({rate: 0.9}),
-          'soap': new Tariff({rate: 0.2}),
-          'water': new Tariff({rate: 0.2}),
-          'chicken': new Tariff({rate: 0.4}),
-          'shoes': new Tariff({rate: 0.05})
-        },
-        'sensitivities': {
-          'tea': 0.45,
-          'chicken': 0.31,
-          'soap': 0.72,
-          'water': 0.41,
-          'shoes': 0.4,
-        },
-        'basePrices': {
-          'tea': 17.241379,
-          'soap': 17.723880597014925,
-          'water': 12.911843276936776,
-          'chicken': 107.502287282708143,
-          'shoes': 1658.173076923076923
-        },
-        'demands': {
-          'tea': 1.0,
-          'chicken': 1.0,
-          'soap': 1.0,
-          'water': 1.0,
-          'shoes': 1.0
-       }
-    })
-}
-TradeWar.ALL_GOODS = [TradeWar.TEA, TradeWar.SOAP, TradeWar.WATER,
-    TradeWar.CHICKEN, TradeWar.SHOES];
-TradeWar.INDIAN_CITIZENS = new Citizens({country: TradeWar.INDIA});
-TradeWar.INDIAN_PRODUCERS = new Producers({country: TradeWar.INDIA});
-TradeWar.CHINA.set('counterpart', TradeWar.INDIA);
-
-var HistoricDataByGood = Backbone.Model.extend({
-    initialize: function () {
-        this.set('data', {});
-    },
-    getData: function(good) {
-        var name = good.get('name');
-        var data = this.get('data');
-        if (name in data)
-            return this.get('data')[good.get('name')];
-        else
-            return [];
-    },
-    record: function(good, value) {
-        var name = good.get('name');
-        var data = this.get('data');
-        if (! (name in data))
-            data[name] = [];
-        data[name].push(value);
-    },
-    currentVal: function(good) {
-        var data = this.getData(good);
-        if (data.length)
-            return data[data.length - 1]
-    },
-    previousVal: function(good) {
-        var data = this.getData(good);
-        if (data.length > 1)
-            return data[data.length - 2]
-    },
-    changeIn: function(good) {
-        var currentVal = this.currentVal(good);
-        var lastVal = this.previousVal(good);
-        return currentVal - lastVal;
-    },
-    percentageChange: function(good) {
-        var currentVal = this.currentVal(good);
-        var lastVal = this.previousVal(good);
-        return (currentVal - lastVal) / lastVal;
-    },
+var TradingPartnerResponseView = Backbone.View.extend({
+    render: function () {
+        attrs = {
+            countryName: this.model.get('name'),
+            goodName: this.options.good.get('name'),
+            newTariff: this.model.historicTariffs.currentVal(this.options.good),
+            oldTariff: this.model.historicTariffs.previousVal(this.options.good)
+        }
+        $(this.el).append(ich.responseTemplate(attrs));
+        return this;
+    }
 });
+
+
+var INDIA = new Country({
+    name: 'India',
+    flag: 'static/img/india.png',
+   'currency': 'INR',
+    'tariffs': {
+      'tea': new Tariff({rate: 1.0}),
+      'soap': new Tariff({rate: 0.1}),
+      'water': new Tariff({rate: 0.3}),
+      'chicken': new Tariff({rate: 0.3}),
+      'shoes': new Tariff({rate: 0.1})
+    },
+    'sensitivities': {
+      'tea': 0.45,
+      'chicken': 0.31,
+      'soap': 0.72,
+      'water': 0.41,
+      'shoes': 0.4,
+    },
+    'basePrices': {
+      'tea': 17.241379,
+      'soap': 17.723880597014925,
+      'water': 12.911843276936776,
+      'chicken': 107.502287282708143,
+      'shoes': 1658.173076923076923
+    },
+    'demands': {
+      'tea': 1.0,
+      'chicken': 1.0,
+      'soap': 1.0,
+      'water': 1.0,
+      'shoes': 1.0
+   }
+});
+CHINA = new TradingPartner({
+    name: 'China',
+    flag: 'static/img/china.png',
+   'currency': 'RMB',
+    'tariffs': {
+      'tea': new Tariff({rate: 0.9}),
+      'soap': new Tariff({rate: 0.2}),
+      'water': new Tariff({rate: 0.2}),
+      'chicken': new Tariff({rate: 0.4}),
+      'shoes': new Tariff({rate: 0.05})
+    },
+    'sensitivities': {
+      'tea': 0.45,
+      'chicken': 0.31,
+      'soap': 0.72,
+      'water': 0.41,
+      'shoes': 0.4,
+    },
+    'basePrices': {
+      'tea': 17.241379,
+      'soap': 17.723880597014925,
+      'water': 12.911843276936776,
+      'chicken': 107.502287282708143,
+      'shoes': 1658.173076923076923
+    },
+    'demands': {
+      'tea': 1.0,
+      'chicken': 1.0,
+      'soap': 1.0,
+      'water': 1.0,
+      'shoes': 1.0
+   }
+});
+INDIAN_CITIZENS = new Citizens({country: INDIA});
+INDIAN_PRODUCERS = new Producers({country: INDIA});
+INDIAN_EXPORTERS = new Exporters({country: CHINA});
+CHINA.set('counterpart', INDIA);
 var GameModel = Backbone.Model.extend({
     // Central event dispatcher and holder of game state
     defaults: {
         year: 1990,
-        country: TradeWar.INDIA,
-        partner: TradeWar.CHINA,
-        goods: [TradeWar.TEA],
-        citizens: TradeWar.INDIAN_CITIZENS,
-        producers: TradeWar.INDIAN_PRODUCERS,
-        exporters: new Exporters({country: TradeWar.CHINA})
+        country: INDIA,
+        partner: CHINA,
+        goods: [GOODS.TEA],
+        citizens: INDIAN_CITIZENS,
+        producers: INDIAN_PRODUCERS,
+        exporters: INDIAN_EXPORTERS
     },
     initialize: function() {
         this.on('playerTurnOver', this.advanceYear, this);
@@ -441,7 +448,7 @@ var AdjustmentGameView = GameView.extend({
         $(this.el).append(ich.adjustTemplate(this.model.toJSON()));
 
         var controlsDiv = this.$('#controls');
-        _(TradeWar.ALL_GOODS).each(function(good) {
+        _(GOODS.ALL_GOODS).each(function(good) {
             var ourTariff = this.country.tariffFor(good);
             var partnerTariff = this.partner.tariffFor(good);
             var view = new TariffControlView({
@@ -467,7 +474,15 @@ var FeedbackGameView = GameView.extend({
         $(this.el).append(ich.feedbackTemplate(this.model.toJSON()));
         var feedbackDiv = this.$('#feedback');
 
-        _(this.).each(function(good) {
+        var changedGoods = this.partner.historicTariffs.changedGoods(GOODS.ALL_GOODS);
+        _(changedGoods).each(function(good) {
+            var view = new TradingPartnerResponseView({
+                model: this.partner, good: good});
+            feedbackDiv.append(view.render().el);
+        }.bind(this));
+
+        changedGoods = this.country.historicTariffs.changedGoods(GOODS.ALL_GOODS);
+        _(changedGoods).each(function(good) {
             var view = new InterestGroupGoodView({
                 model: this.citizens, good: good});
             feedbackDiv.append(view.render().el);
@@ -480,35 +495,35 @@ var FeedbackGameView = GameView.extend({
     }
 });
 
-var GameRouter = Backbone.Router.extend({
-    routes: {
-        'setup': 'setup',
-        'adjust': 'adjust',
-        'next': 'next',
-        'feedback': 'feedback',
-        'endgame': 'endgame'
-    },
-    setup: function() {
-        this.navigate('adjust', true);
-    },
-    adjust: function() {
-        new AdjustmentGameView({model: TradeWar.game});
-    },
-    next:  function() {
-        TradeWar.game.trigger('playerTurnOver');
-        TradeWar.game.trigger('compTurnStart');
-        TradeWar.game.trigger('compTurnOver');
-        this.navigate('feedback', true);
-    },
-    feedback:  function() {
-        new FeedbackGameView({model: TradeWar.game});
-    },
-    endgame:  function() {
-    },
-});
-
 $(function() {
-    TradeWar.game = new GameModel();
+    var GAME = new GameModel();
+    var GameRouter = Backbone.Router.extend({
+        routes: {
+            'setup': 'setup',
+            'adjust': 'adjust',
+            'next': 'next',
+            'feedback': 'feedback',
+            'endgame': 'endgame'
+        },
+        setup: function() {
+            this.navigate('adjust', true);
+        },
+        adjust: function() {
+            GAME.trigger('playerTurnStart');
+            new AdjustmentGameView({model: GAME});
+        },
+        next:  function() {
+            GAME.trigger('playerTurnOver');
+            GAME.trigger('compTurnStart');
+            this.navigate('feedback', true);
+        },
+        feedback:  function() {
+            GAME.trigger('compTurnOver');
+            new FeedbackGameView({model: GAME});
+        },
+        endgame:  function() {
+        },
+    });
     var router = new GameRouter();
     Backbone.history.start();
     router.navigate('setup', true);

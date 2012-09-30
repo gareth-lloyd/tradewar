@@ -249,50 +249,57 @@ describe("GameModel", function() {
 
 describe("HistoricDataByGood", function() {
   var hdbg;
-  var good = new Good({name: 'tea'});
+  var good1 = new Good({name: 'a'});
+  var good2 = new Good({name: 'b'});
   beforeEach(function() {
     hdbg = new HistoricDataByGood();
   });
 
   it("should record the data against a particular good", function() {
-    expect(hdbg.getData(good)).toEqual([]);
-    hdbg.record(good, 1.0);
-    expect(hdbg.getData(good)).toEqual([1.0]);
+    expect(hdbg.getData(good1)).toEqual([]);
+    hdbg.record(good1, 1.0);
+    expect(hdbg.getData(good1)).toEqual([1.0]);
   });
 
   it("should report data in order of insertion", function() {
-    hdbg.record(good, 1.0);
-    expect(hdbg.getData(good)).toEqual([1.0]);
-    hdbg.record(good, 2.0);
-    expect(hdbg.getData(good)).toEqual([1.0, 2.0]);
+    hdbg.record(good1, 1.0);
+    expect(hdbg.getData(good1)).toEqual([1.0]);
+    hdbg.record(good1, 2.0);
+    expect(hdbg.getData(good1)).toEqual([1.0, 2.0]);
   });
   it("should report current value", function() {
-    hdbg.record(good, 1.0);
-    expect(hdbg.currentVal(good)).toEqual(1.0);
-    hdbg.record(good, 3.0);
-    expect(hdbg.currentVal(good)).toEqual(3.0);
+    hdbg.record(good1, 1.0);
+    expect(hdbg.currentVal(good1)).toEqual(1.0);
+    hdbg.record(good1, 3.0);
+    expect(hdbg.currentVal(good1)).toEqual(3.0);
   });
   it("should report previous value", function() {
-    hdbg.record(good, 1.0);
-    hdbg.record(good, 3.0);
-    expect(hdbg.previousVal(good)).toEqual(1.0);
+    hdbg.record(good1, 1.0);
+    hdbg.record(good1, 3.0);
+    expect(hdbg.previousVal(good1)).toEqual(1.0);
   });
   it("should report no change if data is same", function() {
-    hdbg.record(good, 1.0);
-    hdbg.record(good, 1.0);
-    expect(hdbg.changeIn(good)).toEqual(0);
+    hdbg.record(good1, 1.0);
+    hdbg.record(good1, 1.0);
+    expect(hdbg.changeIn(good1)).toEqual(0);
   });
   it("should report price changes", function() {
-    hdbg.record(good, 1.0);
-    hdbg.record(good, 3.0);
-    expect(hdbg.changeIn(good)).toEqual(2);
+    hdbg.record(good1, 1.0);
+    hdbg.record(good1, 3.0);
+    expect(hdbg.changeIn(good1)).toEqual(2);
   });
-  it("should report percentage changed", function() {
-    hdbg.record(good, 1.0);
-    hdbg.record(good, 2.0);
-    expect(hdbg.percentageChange(good)).toEqual(1);
-    hdbg.record(good, 1.0);
-    expect(hdbg.percentageChange(good)).toEqual(-.5);
-
+  it("should report changed", function() {
+    var all = [good1, good2];
+    hdbg.record(good1, 1.0);
+    hdbg.record(good2, 2.0);
+    hdbg.record(good1, 1.0);
+    hdbg.record(good2, 2.0);
+    expect(hdbg.changedGoods(all)).toEqual([]);
+    hdbg.record(good1, 3.0);
+    expect(hdbg.changedGoods(all)).toEqual([good1]);
+    hdbg.record(good2, 4.0);
+    var changed = hdbg.changedGoods(all);
+    expect(good1 in changed).toBe(true);
+    expect(good2 in changed).toBe(true);
   });
 });
