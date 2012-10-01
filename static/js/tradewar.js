@@ -34,8 +34,6 @@ var GOODS = {
     WATER: new Good({name: 'water', picture: 'static/img/water.png'}),
     CHICKEN: new Good({name: 'chicken', picture: 'static/img/chicken.png'}),
 }
-GOODS.ALL_GOODS = [GOODS.TEA, GOODS.SOAP, GOODS.WATER,
-    GOODS.CHICKEN, GOODS.SHOES];
 
 var HistoricDataByGood = Backbone.Model.extend({
     initialize: function () {
@@ -197,7 +195,7 @@ var InterestGroup = Backbone.Model.extend({
         this.recordHistory();
     },
     recordHistory: function () {
-        _(GOODS.ALL_GOODS).each(function(good) {
+        this.get('country').goods.each(function(good) {
             this.historicMoods.record(good, this.moodFor(good));
         }.bind(this));
     },
@@ -216,25 +214,24 @@ var InterestGroup = Backbone.Model.extend({
     },
     expectedPriceOfConsumption: function(good) {
         var country = this.get('country');
-        return (country.basePriceFor(good) * country.demandFor(good) *
-            this.priceExpectationMultiplier);
+        return (country.basePriceFor(good) *
+                this.priceExpectationMultiplier);
     },
     actualPriceOfConsumption: function(good) {
         var country = this.get('country');
-        return (country.currentPriceFor(good) * country.demandFor(good));
+        return country.currentPriceFor(good);
     },
     percentDifferenceFromExpected: function(good) {
         var expected = this.expectedPriceOfConsumption(good);
         var actual = this.actualPriceOfConsumption(good);
         var diff = (actual - expected) / expected;
-        console.log(good.get('name'), ':', this.get('name'), 'expected', expected, 'but was', actual);
         return diff;
     },
     dampen: function(d) {
         return Math.sqrt(Math.abs(d));
     },
     averageMood: function() {
-        var goods = _(GOODS.ALL_GOODS);
+        var goods = this.get('country').goods;
         if (goods.size() < 0)
             return 0
 
@@ -252,9 +249,7 @@ var Citizens = InterestGroup.extend({
         'picture50': 'static/img/citizens50.png'
     },
     moodFor: function(good) {
-        var diff = -this.percentDifferenceFromExpected(good);
-        console.log('cit:', diff, good.get('name'))
-        return diff
+        return -this.percentDifferenceFromExpected(good);
     },
     moodTextFor: function(good) {
         var priceChange = this.recentPriceChangeFor(good);
@@ -277,9 +272,7 @@ var Producers = InterestGroup.extend({
         'picture50': 'static/img/producers50.png'
     },
     moodFor: function(good) {
-        var diff = this.percentDifferenceFromExpected(good);
-        console.log('prod:', diff, good.get('name'))
-        return diff
+        return this.percentDifferenceFromExpected(good);
     },
     moodTextFor: function(good) {
         var priceChange = this.recentPriceChangeFor(good);
@@ -303,9 +296,7 @@ var Exporters = InterestGroup.extend({
         'picture50': 'static/img/exporters50.png'
     },
     moodFor: function(good) {
-        var diff = -this.percentDifferenceFromExpected(good);
-        console.log('exp:', diff, good.get('name'))
-        return diff
+        return -this.percentDifferenceFromExpected(good);
     },
     moodTextFor: function(good) {
         var priceChange = this.recentPriceChangeFor(good);
@@ -334,7 +325,6 @@ var InterestGroupAverageView = Backbone.View.extend({
 
         $(this.el).append(ich.interestGroupMoodTemplate(attrs));
         this.$('img').addClass(this.model.moodColourClass(moodValue));
-        console.log(this.model.get('name'), moodValue);
         return this;
     }
 });
@@ -357,6 +347,16 @@ var Country = Backbone.Model.extend({
     initialize: function() {
         this.historicPrices = new HistoricDataByGood();
         this.historicTariffs = new HistoricDataByGood();
+        this.goods = _([]);
+        this.set({basePrices: {}, sensitivities: {}, tariffs: {}});
+        _(this.get('goodDescriptions')).each(function (desc) {
+            var goodName = desc.good.get('name');
+            this.goods.push(desc.good);
+            this.get('basePrices')[goodName] = desc.basePrice;
+            this.get('sensitivities')[goodName] = desc.sensitivity;
+            this.get('tariffs')[goodName] = desc.tariff;
+        }.bind(this));
+        console.log(this.get('tariffs'));
         this.recordHistory();
     },
     basePriceFor: function(good) {
@@ -367,9 +367,6 @@ var Country = Backbone.Model.extend({
     },
     tariffFor: function(good) {
         return this.get('tariffs')[good.get('name')];
-    },
-    demandFor: function(good) {
-        return this.get('demands')[good.get('name')];
     },
     currentPriceFor: function(good) {
         return this.historicPrices.currentVal(good);
@@ -390,7 +387,7 @@ var Country = Backbone.Model.extend({
         return basePrice + (rate * basePrice * sensitivity);
     },
     recordHistory: function () {
-        _(GOODS.ALL_GOODS).each(function(good) {
+        this.goods.each(function(good) {
             this.historicPrices.record(good, this.actualPriceFor(good));
             this.historicTariffs.record(good, this.tariffFor(good).get('rate'));
         }.bind(this));
@@ -405,10 +402,8 @@ var TradingPartner = Country.extend({
         return diff * (Math.random() + 0.5);
     },
     alterTariffsInResponse: function () {
-        var goods = _(GOODS.ALL_GOODS);
-        goods.each(function(good) {
+        this.goods.each(function(good) {
             var urgency = this.urgency(good);
-            console.log(good.get('name'), 'urgency:', urgency);
             if (Math.abs(urgency) > 0.3) {
                 this.alterTariff(good);
             }
@@ -469,76 +464,43 @@ var TradingPartnerResponseView = Backbone.View.extend({
     }
 });
 
-
 var INDIA = new Country({
     name: 'India',
     flag100: 'static/img/india100.png',
     flag50: 'static/img/india50.png',
     flag25: 'static/img/india25.png',
-   'currency': 'Rs',
-    'tariffs': {
-      'tea': new Tariff({rate: 1.0}),
-      'soap': new Tariff({rate: 0.1}),
-      'water': new Tariff({rate: 0.3}),
-      'chicken': new Tariff({rate: 0.3}),
-      'shoes': new Tariff({rate: 0.1})
-    },
-    'sensitivities': {
-      'tea': 0.45,
-      'chicken': 0.31,
-      'soap': 0.72,
-      'water': 0.41,
-      'shoes': 0.4,
-    },
-    'basePrices': {
-      'tea': 17.241379,
-      'soap': 17.723880597014925,
-      'water': 12.911843276936776,
-      'chicken': 107.502287282708143,
-      'shoes': 1658.173076923076923
-    },
-    'demands': {
-      'tea': 1.0,
-      'chicken': 1.0,
-      'soap': 1.0,
-      'water': 1.0,
-      'shoes': 1.0
-   }
+    currency: 'Rs',
+    goodDescriptions: [
+        {good: GOODS.TEA, sensitivity: 0.45, basePrice: 17.241379,
+                tariff: new Tariff({rate: 1.0})},
+        {good: GOODS.SOAP, sensitivity: 0.72, basePrice: 17.723880597014925,
+                tariff: new Tariff({rate: 0.1})},
+        {good: GOODS.WATER, sensitivity: 0.41, basePrice: 12.911843276936776,
+                tariff: new Tariff({rate: 0.3})},
+        {good: GOODS.SHOES, sensitivity: 0.4, basePrice: 1658.173076923076923,
+                tariff: new Tariff({rate: 0.1})},
+        {good: GOODS.CHICKEN, sensitivity: 0.31, basePrice: 107.502287282708143,
+                tariff: new Tariff({rate: 0.3})}
+    ]
 });
 CHINA = new TradingPartner({
     name: 'China',
     flag100: 'static/img/china100.png',
     flag50: 'static/img/china50.png',
     flag25: 'static/img/china25.png',
-   'currency': 'RMB',
-    'tariffs': {
-      'tea': new Tariff({rate: 0.65}),
-      'soap': new Tariff({rate: 0.1}),
-      'water': new Tariff({rate: 0.2}),
-      'chicken': new Tariff({rate: 0.25}),
-      'shoes': new Tariff({rate: 0})
-    },
-    'sensitivities': {
-      'tea': 0.45,
-      'chicken': 0.31,
-      'soap': 0.72,
-      'water': 0.41,
-      'shoes': 0.4,
-    },
-    'basePrices': {
-      'tea': 17.241379,
-      'soap': 17.723880597014925,
-      'water': 12.911843276936776,
-      'chicken': 107.502287282708143,
-      'shoes': 1658.173076923076923
-    },
-    'demands': {
-      'tea': 1.0,
-      'chicken': 1.0,
-      'soap': 1.0,
-      'water': 1.0,
-      'shoes': 1.0
-   }
+    currency: 'RMB',
+    goodDescriptions: [
+        {good: GOODS.TEA, sensitivity: 0.45, basePrice: 17.241379,
+                tariff: new Tariff({rate: 0.65})},
+        {good: GOODS.SOAP, sensitivity: 0.72, basePrice: 17.723880597014925,
+                tariff: new Tariff({rate: 0.2})},
+        {good: GOODS.WATER, sensitivity: 0.41, basePrice: 12.911843276936776,
+                tariff: new Tariff({rate: 0.25})},
+        {good: GOODS.SHOES, sensitivity: 0.4, basePrice: 1658.173076923076923,
+                tariff: new Tariff({rate: 0.15})},
+        {good: GOODS.CHICKEN, sensitivity: 0.31, basePrice: 107.502287282708143,
+                tariff: new Tariff({rate: 0.1})}
+    ]
 });
 INDIAN_CITIZENS = new Citizens({country: INDIA});
 INDIAN_PRODUCERS = new Producers({country: INDIA});
@@ -591,10 +553,9 @@ var GameModel = Backbone.Model.extend({
     },
     score: function(name) {
         var moods = this.get(name).historicMoods;
-        var averages = _(GOODS.ALL_GOODS).map(function(good) {
+        var averages = this.get('country').goods.map(function(good) {
             return moods.average(good);
         });
-        console.log(averages);
         return average(averages);
     },
     finalizeScores: function () {
@@ -665,7 +626,7 @@ var AdjustmentGameView = GameView.extend({
         $(this.el).append(ich.adjustTemplate(attrs));
 
         var controlsDiv = this.$('#controls');
-        _(GOODS.ALL_GOODS).each(function(good) {
+        this.country.goods.each(function(good) {
             var ourTariff = this.country.tariffFor(good);
             var partnerTariff = this.partner.tariffFor(good);
             var view = new TariffControlView({
@@ -693,15 +654,15 @@ var FeedbackGameView = GameView.extend({
         var partnerFeedbackDiv = this.$('#partnerFeedback');
 
         var partnerChangedGoods = this.partner.historicTariffs.changedGoods(
-            GOODS.ALL_GOODS);
+            this.partner.goods);
         _(partnerChangedGoods).each(function(good) {
             var view = new TradingPartnerResponseView({
                 model: this.partner, good: good, exporters: this.exporters});
             partnerFeedbackDiv.append(view.render().el);
-            
         }.bind(this));
 
-        var changedGoods = this.country.historicTariffs.changedGoods(GOODS.ALL_GOODS);
+        var changedGoods = this.country.historicTariffs.changedGoods(
+            this.country.goods);
         _(changedGoods).each(function(good) {
             var tariffChangeView = new TariffChangeView({
                 tariff: this.country.tariffFor(good),
@@ -727,46 +688,48 @@ var FeedbackGameView = GameView.extend({
     }
 });
 
-$(function() {
-    var GAME = new GameModel();
-    var GameRouter = Backbone.Router.extend({
-        routes: {
-            'countryIntro': 'countryIntro',
-            'partnerIntro': 'partnerIntro',
-            'adjust': 'adjust',
-            'next': 'next',
-            'feedback': 'feedback',
-            'endgame': 'endgame'
-        },
-        countryIntro: function() {
-            new IntroGameView({model: GAME, template: 'countryIntroTemplate'});
-        },
-        partnerIntro: function() {
-            new IntroGameView({model: GAME, template: 'partnerIntroTemplate'});
-        },
-        adjust: function() {
-            GAME.trigger('playerTurnStart');
-            new AdjustmentGameView({model: GAME});
-        },
-        next:  function() {
-            GAME.trigger('playerTurnOver');
-            GAME.trigger('compTurnStart');
-            if (GAME.get('year') == 2022)
-                this.navigate('endgame', true);
-            else
-                this.navigate('feedback', true);
-        },
-        feedback:  function() {
-            GAME.trigger('compTurnOver');
-            new FeedbackGameView({model: GAME});
-        },
-        endgame:  function() {
-            GAME.trigger('gameOver');
-            new EndGameView({model: GAME});
-        },
-    });
-    var router = new GameRouter();
-    Backbone.history.start();
-    router.navigate('countryIntro', true);
+var GameRouter = Backbone.Router.extend({
+    routes: {
+        'countryIntro': 'countryIntro',
+        'partnerIntro': 'partnerIntro',
+        'adjust': 'adjust',
+        'next': 'next',
+        'feedback': 'feedback',
+        'endgame': 'endgame'
+    },
+    initialize: function(options) {
+        this.game = this.options.game;
+    },
+    countryIntro: function() {
+        new IntroGameView({
+            model: this.options.game,
+            template: 'countryIntroTemplate'
+        });
+    },
+    partnerIntro: function() {
+        new IntroGameView({
+            model: this.options.game,
+            template: 'partnerIntroTemplate'
+        });
+    },
+    adjust: function() {
+        this.options.game.trigger('playerTurnStart');
+        new AdjustmentGameView({model: this.options.game});
+    },
+    next:  function() {
+        this.options.game.trigger('playerTurnOver');
+        this.options.game.trigger('compTurnStart');
+        if (this.options.game.get('year') == 2022)
+            this.navigate('endgame', true);
+        else
+            this.navigate('feedback', true);
+    },
+    feedback:  function() {
+        this.options.game.trigger('compTurnOver');
+        new FeedbackGameView({model: this.options.game});
+    },
+    endgame:  function() {
+        this.options.game.trigger('gameOver');
+        new EndGameView({model: this.options.game});
+    },
 });
-
