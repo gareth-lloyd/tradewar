@@ -33,6 +33,9 @@ describe("TradeWar", function () {
   });
 
   describe("Country", function() {
+    it("should initialize historic data", function() {
+      expect(country.historicPrices.getData(goodA).length).toEqual(1);
+    });
     it("reports tariff for a good", function() {
       expect(country.tariffFor(goodA)).toBe(tariffA);
     });
@@ -114,8 +117,9 @@ describe("TradeWar", function () {
           country.actualPriceFor(goodA));
       expect(producers.moodFor(goodA)).toBeLessThan(0);
     });
-    it("will be sad if expected price is less than actual", function() {
+    it("will be happy if expected price is less than actual", function() {
       country.tariffFor(goodA).set('rate', 1.5);
+      country.recordHistory();
       expect(producers.expectedPriceOfConsumption(goodA)).toBeLessThan(
           country.actualPriceFor(goodA));
       expect(producers.moodFor(goodA)).toBeGreaterThan(0);
@@ -140,20 +144,10 @@ describe("TradeWar", function () {
       });
     });
 
-    it("should initialize historic data", function() {
-      expect(game.get('historicPrices').getData(goodA).length).toEqual(1);
-    });
     it("should advance the year on playerTurnOver", function() {
       var year = game.get('year');
       game.trigger('playerTurnOver');
       expect(game.get('year')).toEqual(year + 1);
-    });
-    it("should record detect goods changed this turn", function() {
-      game.trigger('playerTurnOver');
-      expect(game.get('goodsChangedThisTurn')).toEqual([]);
-      game.get('country').tariffFor(goodA).set('rate', 1.0);
-      game.trigger('playerTurnOver');
-      expect(game.get('goodsChangedThisTurn')).toEqual([goodA]);
     });
   });
 
@@ -204,9 +198,7 @@ describe("TradeWar", function () {
       hdbg.record(goodA, 3.0);
       expect(hdbg.changedGoods(all)).toEqual([goodA]);
       hdbg.record(goodB, 4.0);
-      var changed = hdbg.changedGoods(all);
-      expect(goodA in changed).toBe(true);
-      expect(goodB in changed).toBe(true);
+      expect(hdbg.changedGoods(all)).toEqual([goodA, goodB]);
     });
   });
 });

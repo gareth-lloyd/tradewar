@@ -356,7 +356,6 @@ var Country = Backbone.Model.extend({
             this.get('sensitivities')[goodName] = desc.sensitivity;
             this.get('tariffs')[goodName] = desc.tariff;
         }.bind(this));
-        console.log(this.get('tariffs'));
         this.recordHistory();
     },
     basePriceFor: function(good) {
@@ -698,38 +697,38 @@ var GameRouter = Backbone.Router.extend({
         'endgame': 'endgame'
     },
     initialize: function(options) {
-        this.game = this.options.game;
+        this.game = options.game;
     },
     countryIntro: function() {
         new IntroGameView({
-            model: this.options.game,
+            model: this.game,
             template: 'countryIntroTemplate'
         });
     },
     partnerIntro: function() {
         new IntroGameView({
-            model: this.options.game,
+            model: this.game,
             template: 'partnerIntroTemplate'
         });
     },
     adjust: function() {
-        this.options.game.trigger('playerTurnStart');
-        new AdjustmentGameView({model: this.options.game});
+        this.game.trigger('playerTurnStart');
+        new AdjustmentGameView({model: this.game});
     },
     next:  function() {
-        this.options.game.trigger('playerTurnOver');
-        this.options.game.trigger('compTurnStart');
-        if (this.options.game.get('year') == 2022)
+        this.game.trigger('playerTurnOver');
+        this.game.trigger('compTurnStart');
+        if (this.game.get('year') == 2022)
             this.navigate('endgame', true);
         else
             this.navigate('feedback', true);
     },
     feedback:  function() {
-        this.options.game.trigger('compTurnOver');
-        new FeedbackGameView({model: this.options.game});
+        this.game.trigger('compTurnOver');
+        new FeedbackGameView({model: this.game});
     },
     endgame:  function() {
-        this.options.game.trigger('gameOver');
-        new EndGameView({model: this.options.game});
+        this.game.trigger('gameOver');
+        new EndGameView({model: this.game});
     },
 });
