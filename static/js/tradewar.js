@@ -73,7 +73,7 @@ var HistoricDataByGood = Backbone.Model.extend({
         return currentVal - lastVal;
     },
     changedGoods: function(allGoods) {
-        return _(allGoods).filter(function(good) {
+        return allGoods.filter(function(good) {
             return this.changeIn(good) != 0;
         }.bind(this));
     },
