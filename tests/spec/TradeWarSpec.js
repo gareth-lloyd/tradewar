@@ -144,12 +144,12 @@ describe("TradeWar", function () {
       });
     });
 
-    it("should advance the year on playerTurnOver", function() {
-      var year = game.get('year');
-      game.trigger('playerTurnOver');
-      expect(game.get('year')).toEqual(year + 1);
-    });
-  });
+//    it("should advance the year on playerTurnOver", function() {
+ //     var year = game.get('year');
+  //    game.trigger('playerTurnOver');
+   //   expect(game.get('year')).toEqual(year + 1);
+//    });
+ // });
 
   describe("HistoricDataByGood", function() {
     var hdbg;

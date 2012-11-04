@@ -5,9 +5,10 @@
         window.STATIC = "static/";
     </script>
     <link rel="stylesheet" href="static/css/bootstrap.css" />
-    <link rel="stylesheet" href="static/css/tradewar.css" />
     <link rel="stylesheet" href="static/css/jquery-ui.custom.css" />
+    <link rel="stylesheet" href="static/css/tradewar.css" />
 
+    <!-- libraries -->
     <script src="static/js/lib/jquery.js" type="text/javascript"></script>
     <script src="static/js/lib/jquery-ui.js" type="text/javascript"></script>
     <script src="static/js/lib/mustache.js" type="text/javascript"></script>
@@ -16,14 +17,41 @@
     <script src="static/js/lib/backbone.js" type="text/javascript"></script>
     <script src="static/js/lib/bootstrap.js" type="text/javascript"></script>
     <script src="static/js/lib/highcharts.js" type="text/javascript"></script>
+
+    <!-- game files -->
     <script src="static/js/tradewar.js" type="text/javascript"></script>
+    <script src="static/js/data.js" type="text/javascript"></script>
+    <script src="static/js/game.js" type="text/javascript"></script>
+
     <script type="text/javascript">
         $(function() {
             var game = new GameModel();
             var router = new GameRouter({game: game});
             Backbone.history.start();
-            router.navigate('countryIntro', true);
+            router.navigate('gameIntro', true);
         });
+    </script>
+
+    <script type='text/html' id='countryChoiceTemplate'>
+        <div class="span9 offset1">
+            <p>
+                Trade Policy is one of the most powerful tools governments have to affect
+                the lives of their citizens. Are you ready to manage trade policy for
+                a major world power?
+            </p>
+            <p>Choose your country:</p>
+
+            <table class="table">
+            {{#countries}}
+                <tr>
+                    <td><img src="{{ flag }}" /></td>
+                    <td><strong>{{ name }}</strong></td>
+                    <td>{{ description }}</td>
+                    <td><a href="#countryIntro/{{ name }}">Play as {{ name }}</a></td>
+                </tr>
+            {{/countries}}
+            </table>
+        </div>
     </script>
 
     <script type="text/html" id='tariffChangeTemplate'>
@@ -99,7 +127,7 @@
     <script type='text/html' id='adjustTemplate'>
         <div class="row">
             <div class="span6" id="year">
-                <h3>The year is {{ year }}...</h3>
+                <h3>Set {{countryName}}'s trade policy for {{ year }}...</h3>
             </div>
         </div>
 
@@ -108,45 +136,46 @@
             </div>
         </div>
 
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                    </th>
+                    <th>
+                    </th>
+                    <th>
+                        <img src="{{ countryPicture }}" class="tableImg"/>
+                        Current price
+                    </th>
+                    <th>
+                        <img src="{{ countryPicture }}" class="tableImg"/>
+                        Tarriff level
+                    </th>
+                    <th>
+                        <img src="{{ countryPicture }}" class="tableImg"/>
+                        Predicted price
+                    </th>
+                    <th>
+                        <img src="{{ partnerPicture }}" class="tableImg"/>
+                        {{ partnerName }}'s tariff
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="controls">
+            </tbody>
+        </table>
         <div class="row">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>
-                        </th>
-                        <th>
-                        </th>
-                        <th>
-                            <img src="{{ countryPicture }}" class="tableImg"/>
-                            Current price<br />in {{ countryName }}
-                        </th>
-                        <th>
-                            <img src="{{ countryPicture }}" class="tableImg"/>
-                            Tariff in <br />{{ countryName }}
-                        </th>
-                        <th>
-                            <img src="{{ countryPicture }}" class="tableImg"/>
-                            Predicted price <br />in {{ countryName }}
-                        </th>
-                        <th>
-                            <img src="{{ partnerPicture }}" class="tableImg"/>
-                            Tariff in {{ partnerName }}
-                        </th>
-                    </tr>
-                </thead>
-                <tbody id="controls">
-                </tbody>
-            </table>
+            <a class="btn btn-success" id="finishTurn" href="#next">
+                Finish Turn
+            </a>
         </div>
-        <a class="btn btn-success" id="finishTurn" href="#next">
-            Finish Turn
-        </a>
     </script>
 
     <script type='text/html' id='feedbackTemplate'>
-        <div class="row" id="partnerFeedback">
+        <h3>Summary of events for the year {{ year }}</h3>
+        <div id="partnerFeedback">
         </div>
-        <div class="row" id="domesticFeedback">
+        <div id="domesticFeedback">
         </div>
 
         <a class="btn btn-success" id="finishTurn" href="#adjust">
@@ -156,13 +185,13 @@
 
     <script type='text/html' id='countryIntroTemplate'>
         <div class="row">
-        <div class="span8 offset2">
+        <div class="span9 offset1">
             <h4>A message from the president of {{ countryName }}!</h4>
         </div>
         </div>
 
         <div class="row">
-        <div class="span8 offset2 letter" >
+        <div class="span9 offset1 letter" >
             <p>
                 <img src="{{ countryPicture }}" class="letterFlag"/> 
                 <br />
@@ -210,13 +239,13 @@
 
     <script type='text/html' id='partnerIntroTemplate'>
         <div class="row">
-        <div class="span8 offset2">
+        <div class="span9 offset1">
             <h4>A message from the trade minister of {{ partnerName }}!</h4>
         </div>
         </div>
 
         <div class="row">
-        <div class="span8 offset2 letter" >
+        <div class="span9 offset1 letter" >
             <p>
                 <img src="{{ partnerPicture }}" class="letterFlag"/> 
                 <br />
@@ -255,13 +284,13 @@
 
     <script type='text/html' id='endGameTemplate'>
         <div class="row">
-        <div class="span8 offset2">
+        <div class="span9 offset1">
             <h4>A message from the president of {{ countryName }}!</h4>
         </div>
         </div>
 
         <div class="row">
-        <div class="span8 offset2 letter" >
+        <div class="span9 offset1 letter" >
             <p>
                 <img src="{{ countryPicture }}" class="letterFlag"/> 
                 <br />
@@ -293,10 +322,29 @@
         </div>
     </script>
 </head>
+
+
 <body>
     <br />
-    <div class="container well" id="gameContainer">
-        <div id="game">
+    <div class="container" id="banner">
+        <div class="row">
+            <div class="span12">
+                <img src="static/img/banner.png" />
+                <br />
+                <br />
+            </div>
+        </div>
+        <div class="row well">
+            <div class="span12" id="game">
+            </div>
+        </div>
+        <div class="row">
+            <div class="span12" id="footer">
+                <small>A project by Gareth Lloyd for the DfID Data Challenge 2012. 
+                    Trade tariff data copyright The Economist Intelligence Unit, 2012</small>
+                <br />
+                <br />
+            </div>
         </div>
     </div>
 </body>
